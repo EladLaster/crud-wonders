@@ -1,28 +1,66 @@
-const source = $("#wonders-template").html()
-const template = Handlebars.compile(source)
+const wondersContainer = document.getElementById("wonders");
+const newWonderInput = document.getElementById("new-wonder-input");
+const newLocationInput = document.getElementById("new-location-input");
+const templateSource = document.getElementById("wonders-template").innerHTML;
+const template = Handlebars.compile(templateSource);
 
-const render = function(wonders){
-    $("#wonders").empty()
-    let newHtml = template({wonders})
-    $("#wonders").append(newHtml)
+const render = (wonders) => {
+    wondersContainer.innerHTML = template({ wonders });
 }
 
-const fetch = function(){
-    $.get("/wonders", function(response){
-        render(response)
+const fetchWonders = () => {
+    fetch("/wonders")
+        .then(res => res.json())
+        .then(render);
+}
+
+const addWonder = () => {
+    const data = { 
+        name: newWonderInput.value.trim(), 
+        location: newLocationInput.value.trim() 
+    };
+    if(!data.name || !data.location) return;
+
+    fetch("/wonder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
     })
+    .then(res => res.json())
+    .then(res => {
+        newWonderInput.value = "";
+        newLocationInput.value = "";
+        render(res.wonders);
+    });
 }
 
-const addWonder = function(){
-    let newWonder = $("#new-wonder-input").val()
-    let newLocation = $("#new-location-input").val()
-    //POST the newWonder to the server
+const updateVisited = (fullText) => {
+    const name = fullText.split(" - ")[0].trim(); // רק שם ה-wonder
+    fetch(`/wonder/${encodeURIComponent(name)}`, { method: "PUT" })
+        .then(res => res.json())
+        .then(res => render(res.wonders));
 }
 
-$("#wonders").on("click", ".visit", function(){
-    let wonder = $(this).closest(".wonder").find(".name").text()
-    //PUT this to the server: update the wonder's `visited` status to `true`
-})
+const deleteWonder = (fullText) => {
+    const name = fullText.split(" - ")[0].trim(); // רק שם ה-wonder
+    fetch(`/wonder/${encodeURIComponent(name)}`, { method: "DELETE" })
+        .then(res => res.json())
+        .then(res => render(res.wonders));
+}
 
+wondersContainer.addEventListener("click", (e) => {
+    const wonderEl = e.target.closest(".wonder");
+    if(!wonderEl) return;
 
-fetch() //load the data on page load
+    const fullText = wonderEl.querySelector(".name").textContent.trim();
+
+    if(e.target.classList.contains("visit")) {
+        updateVisited(fullText);
+    } else if(e.target.classList.contains("delete")) {
+        deleteWonder(fullText);
+    }
+});
+
+document.querySelector("button").addEventListener("click", addWonder);
+
+fetchWonders();

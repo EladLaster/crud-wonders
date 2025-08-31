@@ -14,7 +14,7 @@
     <div id="new-wonder">
         <input type="text" id="new-wonder-input" placeholder="World Wonder" />
         <input type="text" id="new-location-input" placeholder="Location" />
-        <button onclick=addWonder()>Add Wonder</button>
+        <button>Add Wonder</button>
     </div>
 
     <div id="wonders"></div>
@@ -26,6 +26,7 @@
                 {{#unless visited}}
                     <p class=visit>Visit</p>
                 {{/unless}}
+                <button class="delete">Delete</button>
             </div>
         {{/each}}
     </script>
